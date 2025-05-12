@@ -27,3 +27,12 @@
     b. Set of empty interface slots
 
 **NOTE** - Try to model Data structure such that it depicts the Organization of information in real physical world.
+
+
+## Graph Construction APIs
+
+1. graph_t *create_new_graph(char *topology_name);
+
+2. node_t *create_graph_node(graph_t* graph, char *node_name);
+
+3. void insert_link_between_two_nodes(node_t *node1, node_t *node2, char *from_if_name, char *to_if_name, unsigned int cost);
