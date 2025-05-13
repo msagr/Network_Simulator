@@ -1,14 +1,14 @@
 #include "graph.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.>
+#include <stdio.h>
 
 graph_t* create_new_graph(char *topology_name) {
   graph_t *graph = calloc(1, sizeof(graph_t));
   strncpy(graph->topology_name, topology_name, 32);
   graph->topology_name[31] = '\0';
 
-  init_glthread(&graph->node_list)
+  init_glthread(&graph->node_list);
   return graph;
 }
 
@@ -22,7 +22,7 @@ node_t* create_graph_node(graph_t *graph, char *node_name) {
   return node;
 }
 
-void insert_link_between_two_nodes(nodes_t *node1, node_t *node2, 
+void insert_link_between_two_nodes(node_t *node1, node_t *node2, 
   char *from_if_name, char *to_if_name, unsigned int cost) {
 
   link_t *link = calloc(1, sizeof(link_t));
@@ -35,15 +35,15 @@ void insert_link_between_two_nodes(nodes_t *node1, node_t *node2,
 
   link->intf1.link = link; /* Set back pointer to link */
   link->intf2.link = link; /* Set back pointer to link */
-  link->intf.att_node = node1;
-  link->intf.att_node = node2;
+  link->intf1.att_node = node1;
+  link->intf2.att_node = node2;
 
   link->cost = cost;
   int empty_intf_slot;
 
   /* Plugin interface ends into Node */
   empty_intf_slot = get_node_intf_available_slot(node1);
-  node1->intf(empty_intf_slot) = &link->intf1;
+  node1->intf[empty_intf_slot] = &link->intf1;
 
   empty_intf_slot = get_node_intf_available_slot(node2);
   node2->intf[empty_intf_slot] = &link->intf2;

@@ -1,1 +1,4 @@
 rough.md
+*.a
+*.o
+*.exe

@@ -64,3 +64,30 @@
   **used** :
 
   void interface_assign_mac_address(interface_t *interface);
+
+  Display function - Display the entire network topology with networking properties also.
+
+  **used**:
+
+  void dump_nw_graph(graph_t *graph);
+
+  ## Setting up Network Topology
+
+  1. Enhance build_first_topo() in topologies.c to add networking parameyters to the graph.
+
+  2. Display function - Display the entire network topology with networking properties also net.h/net.c
+
+    void dump_nw_graph(graph_t *graph);
+  
+  3. Further we add more networking properties to the nodes and interfaces. We shall be defining more new members to node_nw_prop_t and inf_nw_props_t structures accordingly.
+
+  ## CLI Integration
+
+  1. User Configures/Interact with routing devices through CLI.
+
+  **NOTE** - Check for Juniper Actual Router.
+
+  2. Need an external CLI library using which we can implement our own customize show.config clear commands.
+
+  3. We will use CLI to reconfigure network topology, display info. etc.
+  
