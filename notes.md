@@ -36,3 +36,13 @@
 2. node_t *create_graph_node(graph_t* graph, char *node_name);
 
 3. void insert_link_between_two_nodes(node_t *node1, node_t *node2, char *from_if_name, char *to_if_name, unsigned int cost);
+
+**NOTE** - Need to extend generic graph to represent network topology. 
+
+## Network topology
+
+1. DS APIs related to network config shall be defined in net.h/net.c
+
+2. Every node has its own IP Address, called as loopback address.
+
+3. Every interface must have MAC address and may have ip address/mask.
