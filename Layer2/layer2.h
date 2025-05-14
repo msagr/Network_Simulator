@@ -5,6 +5,19 @@
 #include "../gluethread/glthread.h"
 
 #pragma pack (push,1)
+typedef struct arp_hdr_{
+
+    short hw_type;          /*1 for ethernet cable*/
+    short proto_type;       /*0x0800 for IPV4*/
+    char hw_addr_len;       /*6 for MAC*/
+    char proto_addr_len;    /*4 for IPV4*/
+    short op_code;          /*req or reply*/
+    mac_add_t src_mac;      /*MAC of OIF interface*/
+    unsigned int src_ip;    /*IP of OIF*/
+    mac_add_t dst_mac;      /*?*/
+    unsigned int dst_ip;        /*IP for which ARP is being resolved*/
+} arp_hdr_t;
+
 typedef struct ethernet_hdr_{
 
     mac_add_t dst_mac;
