@@ -45,3 +45,71 @@ delete_arp_table_entry(arp_table_t *arp_table, char *ip_addr){
 
     delete_arp_entry(arp_entry);
 }
+
+bool_t
+arp_table_entry_add(arp_table_t *arp_table, arp_entry_t *arp_entry,
+                    glthread_t **arp_pending_list){
+
+    if(arp_pending_list){
+        assert(*arp_pending_list == NULL);   
+    }
+
+    arp_entry_t *arp_entry_old = arp_table_lookup(arp_table, 
+            arp_entry->ip_addr.ip_addr);
+
+    /* Case 0 : if ARP table do not exist already, then add it
+     * and return TRUE*/
+    if(!arp_entry_old){
+        glthread_add_next(&arp_table->arp_entries, &arp_entry->arp_glue);
+        return TRUE;
+    }
+    
+
+    /*Case 1 : If existing and new ARP entries are full and equal, then
+     * do nothing*/
+    if(arp_entry_old &&
+            IS_ARP_ENTRIES_EQUAL(arp_entry_old, arp_entry)){
+
+        return FALSE;
+    }
+
+    /*Case 2 : If there already exists full ARP table entry, then replace it*/
+    if(arp_entry_old && !arp_entry_sane(arp_entry_old)){
+        delete_arp_entry(arp_entry_old);
+        init_glthread(&arp_entry->arp_glue);
+        glthread_add_next(&arp_table->arp_entries, &arp_entry->arp_glue);
+        return TRUE;
+    }
+
+    /*Case 3 : if existing ARP table entry is sane, and new one is also
+     * sane, then move the pending arp list from new to old one and return FALSE*/
+    if(arp_entry_old &&
+        arp_entry_sane(arp_entry_old) &&
+        arp_entry_sane(arp_entry)){
+    
+        if(!IS_GLTHREAD_LIST_EMPTY(&arp_entry->arp_pending_list)){
+            glthread_add_next(&arp_entry_old->arp_pending_list,
+                    arp_entry->arp_pending_list.right);
+        }
+        if(arp_pending_list)
+            *arp_pending_list = &arp_entry_old->arp_pending_list;
+        return FALSE;
+    }
+
+    /*Case 4 : If existing ARP table entry is sane, but new one if full,
+     * then copy contents of new ARP entry to old one, return FALSE*/
+    if(arp_entry_old && 
+        arp_entry_sane(arp_entry_old) && 
+        !arp_entry_sane(arp_entry)){
+
+        strncpy(arp_entry_old->mac_addr.mac, arp_entry->mac_addr.mac, sizeof(mac_add_t));
+        strncpy(arp_entry_old->oif_name, arp_entry->oif_name, IF_NAME_SIZE);
+        arp_entry_old->oif_name[IF_NAME_SIZE -1] = '\0';
+
+        if(arp_pending_list)
+            *arp_pending_list = &arp_entry_old->arp_pending_list;
+        return FALSE;
+    }
+
+    return FALSE;
+}
