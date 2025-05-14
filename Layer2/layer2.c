@@ -62,6 +62,46 @@ send_arp_broadcast_request(node_t *node,
     free(ethernet_hdr);
 }
 
+static void
+send_arp_reply_msg(ethernet_hdr_t *ethernet_hdr_in, interface_t *oif){
+
+    arp_hdr_t *arp_hdr_in = (arp_hdr_t *)(GET_ETHERNET_HDR_PAYLOAD(ethernet_hdr_in));
+
+    ethernet_hdr_t *ethernet_hdr_reply = (ethernet_hdr_t *)calloc(1, MAX_PACKET_BUFFER_SIZE);
+
+    memcpy(ethernet_hdr_reply->dst_mac.mac, arp_hdr_in->src_mac.mac, sizeof(mac_add_t));
+    memcpy(ethernet_hdr_reply->src_mac.mac, IF_MAC(oif), sizeof(mac_add_t));
+    
+    ethernet_hdr_reply->type = ARP_MSG;
+    
+    arp_hdr_t *arp_hdr_reply = (arp_hdr_t *)(GET_ETHERNET_HDR_PAYLOAD(ethernet_hdr_reply));
+    
+    arp_hdr_reply->hw_type = 1;
+    arp_hdr_reply->proto_type = 0x0800;
+    arp_hdr_reply->hw_addr_len = sizeof(mac_add_t);
+    arp_hdr_reply->proto_addr_len = 4;
+    
+    arp_hdr_reply->op_code = ARP_REPLY;
+    memcpy(arp_hdr_reply->src_mac.mac, IF_MAC(oif), sizeof(mac_add_t));
+
+    inet_pton(AF_INET, IF_IP(oif), &arp_hdr_reply->src_ip);
+    arp_hdr_reply->src_ip =  htonl(arp_hdr_reply->src_ip);
+
+    memcpy(arp_hdr_reply->dst_mac.mac, arp_hdr_in->src_mac.mac, sizeof(mac_add_t));
+    arp_hdr_reply->dst_ip = arp_hdr_in->src_ip;
+  
+    SET_COMMON_ETH_FCS(ethernet_hdr_reply, sizeof(arp_hdr_t), 0); /*Not used*/
+
+    unsigned int total_pkt_size = ETH_HDR_SIZE_EXCL_PAYLOAD + sizeof(arp_hdr_t);
+
+    char *shifted_pkt_buffer = pkt_buffer_shift_right((char *)ethernet_hdr_reply, 
+                               total_pkt_size, MAX_PACKET_BUFFER_SIZE);
+
+    send_pkt_out(shifted_pkt_buffer, total_pkt_size, oif);
+
+    free(ethernet_hdr_reply);  
+}
+
 void
 init_arp_table(arp_table_t **arp_table){
 
