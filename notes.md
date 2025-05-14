@@ -90,4 +90,36 @@
   2. Need an external CLI library using which we can implement our own customize show.config clear commands.
 
   3. We will use CLI to reconfigure network topology, display info. etc.
+
+  ## Packet Processing Criteria
+
+  1. Whenever a Routing Device receives a packet on its local interface, the first thing it has to decide is whether it should process the incoming packet or reject it right away before packet could even enter into TCP/IP stack.
+
+  2. Acceptance or Rejection of the packet depends on many factors including but not limited to:
+
+    a. Interface Operating Modes.
+    b. Interface Configuration.
+    c. Packet Contents.
   
+  3. If the packet is Accepted, Routing device handover the packet to TCP/IP stack, and the ingress journey of the packet commences.
+  
+  ## API: Layer2/layer2.h
+
+  Now, in position to write an API which decides whether routing device should accept or reject the incoming packet arrived on an interface operating in L3 mode:
+
+  static inline bool_t
+  l2_frame_recv_qualify_on_interface(interface_t *interface, ethernet_hdr_t *ethernet_hdr);
+
+  - Returns TRUE, if packet should be accepted for further processing.
+
+  - Returns FALSE, if packet should be rejected.
+
+    ### Pseudocode :
+
+    1. If interface is not working in L3 mode -> Return FALSE.
+
+    2. If interface is operating in L3 mode and dst mac in ethernet hdr -- IF_MAC(interface) -> Return TRUE.
+
+    3. If interface is operating in L3 mode and dst mac in ethernet hdr is BROADCAST MAC -> Return TRUE.
+
+    4. Return FALSE in any other case.
