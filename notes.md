@@ -167,3 +167,10 @@ Format -
 
   Dst MAC -- Src MAC -- Type = 806 -- Payload -- FCS
 
+## Implementing ARP -> ARP Table -> DS
+
+1. ARP is used by Host or L3 Routers to resolve MAC for known IP address.
+
+2. Host/L3 Routers maintain a table called ARP table which contain ARP entries.
+
+

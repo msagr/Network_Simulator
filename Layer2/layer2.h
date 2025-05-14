@@ -46,4 +46,49 @@ l2_frame_recv_qualify_on_interface(interface_t *interface, ethernet_hdr_t *ether
   return FALSE;
 }
 
+/*ARP Table APIs*/
+typedef struct arp_table_{
+
+    glthread_t arp_entries;
+} arp_table_t;
+
+struct arp_entry_{
+
+    ip_add_t ip_addr;   /*key*/
+    mac_add_t mac_addr;
+    char oif_name[IF_NAME_SIZE];
+    glthread_t arp_glue;
+    bool_t is_sane;
+    /* List of packets which are pending for
+     * this ARP resolution*/
+    glthread_t arp_pending_list;
+} arp_utility_L;
+GLTHREAD_TO_STRUCT(arp_glue_to_arp_entry, arp_entry_t, arp_glue);
+
+void
+init_arp_table(arp_table_t **arp_table);
+
+arp_entry_t *
+arp_table_lookup(arp_table_t *arp_table, char *ip_addr);
+
+void
+clear_arp_table(arp_table_t *arp_table);
+
+void
+delete_arp_entry(arp_entry_t *arp_entry);
+
+void
+delete_arp_table_entry(arp_table_t *arp_table, char *ip_addr);
+
+bool_t
+arp_table_entry_add(arp_table_t *arp_table, arp_entry_t *arp_entry,
+                        glthread_t **arp_pending_list);
+
+void
+dump_arp_table(arp_table_t *arp_table);
+
+void
+arp_table_update_from_arp_reply(arp_table_t *arp_table,
+                                arp_hdr_t *arp_hdr, interface_t *iif);
+
 #endif
