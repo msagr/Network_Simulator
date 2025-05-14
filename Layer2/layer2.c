@@ -34,3 +34,14 @@ clear_arp_table(arp_table_t *arp_table){
         delete_arp_entry(arp_entry);
     } ITERATE_GLTHREAD_END(&arp_table->arp_entries, curr);
 }
+
+void
+delete_arp_table_entry(arp_table_t *arp_table, char *ip_addr){
+
+    arp_entry_t *arp_entry = arp_table_lookup(arp_table, ip_addr);
+    
+    if(!arp_entry)
+        return;
+
+    delete_arp_entry(arp_entry);
+}
