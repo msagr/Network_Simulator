@@ -21,3 +21,16 @@ arp_table_lookup(arp_table_t *arp_table, char *ip_addr){
     } ITERATE_GLTHREAD_END(&arp_table->arp_entries, curr);
     return NULL;
 }
+
+void
+clear_arp_table(arp_table_t *arp_table){
+
+    glthread_t *curr;
+    arp_entry_t *arp_entry;
+
+    ITERATE_GLTHREAD_BEGIN(&arp_table->arp_entries, curr){
+        
+        arp_entry = arp_glue_to_arp_entry(curr);
+        delete_arp_entry(arp_entry);
+    } ITERATE_GLTHREAD_END(&arp_table->arp_entries, curr);
+}
