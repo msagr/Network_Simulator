@@ -1,4 +1,66 @@
+#include "graph.h"
+#include <stdio.h>
+#include "layer2.h"
+#include <stdlib.h>
+#include <sys/socket.h>
+#include "comm.h"
 
+/*A Routine to resolve ARP out of oif*/
+void
+send_arp_broadcast_request(node_t *node,
+                           interface_t *oif,
+                           char *ip_addr){
+
+    /*Take memory which can accomodate Ethernet hdr + ARP hdr*/
+    unsigned int payload_size = sizeof(arp_hdr_t);
+    ethernet_hdr_t *ethernet_hdr = (ethernet_hdr_t *)calloc(1, 
+                ETH_HDR_SIZE_EXCL_PAYLOAD + payload_size);
+
+    if(!oif){
+        oif = node_get_matching_subnet_interface(node, ip_addr);
+        if(!oif){
+            printf("Error : %s : No eligible subnet for ARP resolution for Ip-address : %s",
+                    node->node_name, ip_addr);
+            return;
+        }
+        if(strncmp(IF_IP(oif), ip_addr, 16) == 0){
+            printf("Error : %s : Attemp to resolve ARP for local Ip-address : %s",
+                    node->node_name, ip_addr);
+            return;
+        }
+    }
+    /*STEP 1 : Prepare ethernet hdr*/
+    layer2_fill_with_broadcast_mac(ethernet_hdr->dst_mac.mac);
+    memcpy(ethernet_hdr->src_mac.mac, IF_MAC(oif), sizeof(mac_add_t));
+    ethernet_hdr->type = ARP_MSG;
+
+    /*Step 2 : Prepare ARP Broadcast Request Msg out of oif*/
+    arp_hdr_t *arp_hdr = (arp_hdr_t *)(GET_ETHERNET_HDR_PAYLOAD(ethernet_hdr));
+    arp_hdr->hw_type = 1;
+    arp_hdr->proto_type = 0x0800;
+    arp_hdr->hw_addr_len = sizeof(mac_add_t);
+    arp_hdr->proto_addr_len = 4;
+
+    arp_hdr->op_code = ARP_BROAD_REQ;
+
+    memcpy(arp_hdr->src_mac.mac, IF_MAC(oif), sizeof(mac_add_t));
+
+    inet_pton(AF_INET, IF_IP(oif), &arp_hdr->src_ip);
+    arp_hdr->src_ip = htonl(arp_hdr->src_ip);
+
+    memset(arp_hdr->dst_mac.mac, 0,  sizeof(mac_add_t));
+
+    inet_pton(AF_INET, ip_addr, &arp_hdr->dst_ip);
+    arp_hdr->dst_ip = htonl(arp_hdr->dst_ip);
+
+    SET_COMMON_ETH_FCS(ethernet_hdr, sizeof(arp_hdr_t), 0); /*Not used*/
+
+    /*STEP 3 : Now dispatch the ARP Broadcast Request Packet out of interface*/
+    send_pkt_out((char *)ethernet_hdr, ETH_HDR_SIZE_EXCL_PAYLOAD + payload_size,
+                    oif);
+
+    free(ethernet_hdr);
+}
 
 void
 init_arp_table(arp_table_t **arp_table){
