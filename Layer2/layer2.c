@@ -135,3 +135,53 @@ dump_arp_table(arp_table_t *arp_table){
             arp_entry_sane(arp_entry) ? "TRUE" : "FALSE");
     } ITERATE_GLTHREAD_END(&arp_table->arp_entries, curr);
 }
+
+void
+arp_table_update_from_arp_reply(arp_table_t *arp_table, 
+                                arp_hdr_t *arp_hdr, interface_t *iif){
+
+    unsigned int src_ip = 0;
+    glthread_t *arp_pending_list = NULL;
+
+    assert(arp_hdr->op_code == ARP_REPLY);
+
+    arp_entry_t *arp_entry = calloc(1, sizeof(arp_entry_t));
+
+    src_ip = htonl(arp_hdr->src_ip);
+
+    inet_ntop(AF_INET, &src_ip, arp_entry->ip_addr.ip_addr, 16);
+
+    arp_entry->ip_addr.ip_addr[15] = '\0';
+
+    memcpy(arp_entry->mac_addr.mac, arp_hdr->src_mac.mac, sizeof(mac_add_t));
+
+    strncpy(arp_entry->oif_name, iif->if_name, IF_NAME_SIZE);
+
+    arp_entry->is_sane = FALSE;
+
+    bool_t rc = arp_table_entry_add(arp_table, arp_entry, &arp_pending_list);
+
+    glthread_t *curr;
+    arp_pending_entry_t *arp_pending_entry;
+
+    if(arp_pending_list){
+        
+        ITERATE_GLTHREAD_BEGIN(arp_pending_list, curr){
+        
+            arp_pending_entry = arp_pending_entry_glue_to_arp_pending_entry(curr);
+
+            remove_glthread(&arp_pending_entry->arp_pending_entry_glue);
+
+            process_arp_pending_entry(iif->att_node, iif, arp_entry, arp_pending_entry);
+            
+            delete_arp_pending_entry(arp_pending_entry);
+
+        } ITERATE_GLTHREAD_END(arp_pending_list, curr);
+
+        (arp_pending_list_to_arp_entry(arp_pending_list))->is_sane = FALSE;
+    }
+
+    if(rc == FALSE){
+        delete_arp_entry(arp_entry);
+    }
+}
